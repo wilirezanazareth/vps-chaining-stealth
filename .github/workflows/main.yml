@@ -1,11 +1,9 @@
-name: RDP Stealth Ultimate
+name: RDP Stealth
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '13 5,11,17,23 * * *'
-    - cron: '27 2,8,14,20 * * *'
-    - cron: '42 0,6,12,18 * * *'
+    - cron: '0 */6 * * *'
 
 jobs:
   secure-rdp:
@@ -13,39 +11,11 @@ jobs:
     timeout-minutes: 360
 
     steps:
-      - name: 🎲 Random Failure Simulation
-        continue-on-error: true
-        run: |
-          $shouldFail = Get-Random -Minimum 0 -Maximum 100
-          if ($shouldFail -lt 3) {
-            Write-Host "⚠️ Simulating random workflow issue (normal behavior)"
-            Start-Sleep -Seconds (Get-Random -Minimum 20 -Maximum 60)
-            if ($shouldFail -lt 1) {
-              Write-Error "Random simulated failure for authenticity"
-              exit 1
-            }
-          }
-
-      - name: ⏱️ Anti-Detection Random Startup Delay
+      - name: 🎭 Anti-Detection: Random Startup Delay
         run: |
           $delay = Get-Random -Minimum 60 -Maximum 300
-          Write-Host "⏳ Waiting $delay seconds before starting (anti-pattern detection)..."
+          Write-Host "Waiting $delay seconds before starting (anti-pattern detection)..."
           Start-Sleep -Seconds $delay
-
-      - name: 🎯 Set Random Workflow Duration
-        run: |
-          $randomTimeout = Get-Random -Minimum 300 -Maximum 360
-          Write-Host "🕐 Workflow will run for $randomTimeout minutes"
-          echo "WORKFLOW_TIMEOUT=$randomTimeout" >> $env:GITHUB_ENV
-          $timeoutSeconds = $randomTimeout * 60
-          echo "WORKFLOW_TIMEOUT_SECONDS=$timeoutSeconds" >> $env:GITHUB_ENV
-
-      - name: 🌍 Set Timezone Consistency
-        run: |
-          $timezone = "SE Asia Standard Time"
-          Set-TimeZone -Id $timezone
-          Write-Host "🌏 Timezone set to: $timezone"
-          Write-Host "🕐 Current time: $(Get-Date)"
 
       - name: 🔧 Enable RDP + Firewall
         run: |
@@ -74,7 +44,7 @@ jobs:
           Start-Process msiexec.exe -ArgumentList "/i", "`"$path`"", "/quiet", "/norestart" -Wait
           Remove-Item $path -Force
 
-      - name: 🔒 Load Old IP
+      - name: 🔒 Load old IP if exists
         run: |
           if (Test-Path "last-ip.txt") { 
             $oldIP = Get-Content "last-ip.txt" 
@@ -100,49 +70,20 @@ jobs:
           echo "TAILSCALE_HOSTNAME=$hostname" >> $env:GITHUB_ENV
           $tsIP | Out-File "last-ip.txt"
 
-      - name: 🔥 Install Software
+      - name: 🔥 Install Software (Brave, WinRAR, Telegram)
         continue-on-error: true
         run: |
-          Write-Host "📦 Installing Chocolatey package manager..."
+          Write-Host "Installing Chocolatey package manager..."
           Set-ExecutionPolicy Bypass -Scope Process -Force
           [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
           iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-          Write-Host "🌐 Installing Brave Browser..."
+          Write-Host "Installing Brave Browser..."
           choco install brave -y --limit-output --no-progress
-          Write-Host "📦 Installing WinRAR..."
+          Write-Host "Installing WinRAR..."
           choco install winrar -y --limit-output --no-progress
-          Write-Host "💬 Installing Telegram Desktop..."
+          Write-Host "Installing Telegram Desktop..."
           choco install telegram -y --limit-output --no-progress
-          Write-Host "✅ All software installed successfully!"
-
-      - name: 📁 Create Realistic Project Structure
-        continue-on-error: true
-        run: |
-          $projectDir = "$env:USERPROFILE\Documents\Trading"
-          New-Item -ItemType Directory -Path "$projectDir\MT4" -Force | Out-Null
-          New-Item -ItemType Directory -Path "$projectDir\Backtest" -Force | Out-Null
-          New-Item -ItemType Directory -Path "$projectDir\Reports" -Force | Out-Null
-          New-Item -ItemType Directory -Path "$projectDir\Indicators" -Force | Out-Null
-          
-          "# Trading Strategy Notes - $(Get-Date -Format 'yyyy-MM-dd')" | Out-File "$projectDir\notes.txt"
-          "EA Configuration v1.0`nLast updated: $(Get-Date)" | Out-File "$projectDir\MT4\config.txt"
-          "Backtest Results - $(Get-Date -Format 'yyyy-MM-dd')`nPair: EURUSD`nTimeframe: H1" | Out-File "$projectDir\Backtest\results.txt"
-          "Custom Indicators List`n- RSI Modified`n- MACD Enhanced" | Out-File "$projectDir\Indicators\list.txt"
-          
-          Write-Host "✅ Created realistic project structure for trading"
-
-      - name: 🌙 Smart Activity Mode
-        continue-on-error: true
-        run: |
-          $currentHour = (Get-Date).Hour
-          $isActiveHours = ($currentHour -ge 8 -and $currentHour -le 22)
-          if ($isActiveHours) {
-            Write-Host "☀️ Active hours (08:00-22:00) - Normal activity mode"
-            echo "ACTIVITY_MODE=normal" >> $env:GITHUB_ENV
-          } else {
-            Write-Host "🌙 Quiet hours (22:00-08:00) - Low activity mode"
-            echo "ACTIVITY_MODE=low" >> $env:GITHUB_ENV
-          }
+          Write-Host "All software installed successfully!"
 
       - name: ✅ Validate RDP Port
         run: |
@@ -162,316 +103,114 @@ jobs:
           Write-Host "CPU: $cpu"
           Write-Host "RAM: $ram GB"
           Write-Host "Disk Free: $disk GB"
-          Write-Host "Workflow Duration: $env:WORKFLOW_TIMEOUT minutes"
           Write-Host "=========================="
 
-      - name: 💾 Save Credentials
+      - name: 💾 Save Credentials to File
         run: |
           $date = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
           $content = "=== RDP ACCESS CREDENTIALS ===`n"
-          $content += "IP Old: $env:OLD_IP`n"
-          $content += "IP New: $env:TAILSCALE_IP`n"
+          $content += "IP Address Old: $env:OLD_IP`n"
+          $content += "IP Address New: $env:TAILSCALE_IP`n"
           $content += "Username: RDP`n"
           $content += "Password: $env:RDP_PASSWORD`n"
           $content += "Hostname: $env:TAILSCALE_HOSTNAME`n"
-          $content += "Duration: $env:WORKFLOW_TIMEOUT minutes`n"
-          $content += "Password changes: Every 6 hours`n"
+          $content += "Valid for: 6 hours`n"
           $content += "Created: $date`n`n"
-          $content += "Installed Software:`n- Brave Browser`n- WinRAR`n- Telegram Desktop`n"
+          $content += "Installed Software:`n"
+          $content += "- Brave Browser`n"
+          $content += "- WinRAR`n"
+          $content += "- Telegram Desktop`n"
           $content += "==============================="
           $content | Out-File -FilePath rdp-access.txt -Encoding UTF8
 
-      - name: 📦 Upload Credentials
+      - name: 📦 Upload Credentials Artifact
         uses: actions/upload-artifact@v4
         with:
           name: rdp-credentials
           path: rdp-access.txt
           retention-days: 1
 
-      - name: 📱 Telegram Notification
+      - name: 📱 Send to Telegram (Optional)
         continue-on-error: true
         run: |
           try {
-            $message = "🖥️ RDP Ready!%0A%0A🌐 IP Old: $env:OLD_IP%0A🌐 IP New: $env:TAILSCALE_IP%0A👤 User: RDP%0A🔑 Pass: $env:RDP_PASSWORD%0A🏷️ Host: $env:TAILSCALE_HOSTNAME%0A%0A⏱️ Duration: $env:WORKFLOW_TIMEOUT min%0A🔐 Pass rotation: 6h%0A📅 $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
+            $message = "🖥️ RDP Ready!%0A%0A🌐 IP Old: $env:OLD_IP%0A🌐 IP New: $env:TAILSCALE_IP%0A👤 User: RDP%0A🔑 Pass: $env:RDP_PASSWORD%0A🏷️ Host: $env:TAILSCALE_HOSTNAME%0A%0A📦 Software:%0A- Brave Browser%0A- WinRAR%0A- Telegram%0A%0A⏰ Valid: 6 hours%0A📅 $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
             Invoke-WebRequest -Uri "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage?chat_id=${{ secrets.TELEGRAM_CHAT_ID }}&text=$message" -Method Get -TimeoutSec 10
-            Write-Host "✅ Telegram sent"
+            Write-Host "Telegram notification sent successfully"
           } catch {
-            Write-Host "⚠️ Telegram skipped"
+            Write-Host "Telegram notification skipped (secrets not configured)"
           }
 
       - name: 🧭 Show Credentials
         run: |
           Write-Host "`n=== RDP ACCESS ==="
-          Write-Host "IP Old: $env:OLD_IP"
-          Write-Host "IP New: $env:TAILSCALE_IP"
+          Write-Host ("IP Address Old: " + $env:OLD_IP)
+          Write-Host ("IP Address New: " + $env:TAILSCALE_IP)
           Write-Host "Username: RDP"
-          Write-Host "Password: $env:RDP_PASSWORD"
-          Write-Host "Hostname: $env:TAILSCALE_HOSTNAME"
-          Write-Host "Duration: $env:WORKFLOW_TIMEOUT minutes"
+          Write-Host ("Password: " + $env:RDP_PASSWORD)
+          Write-Host ("Hostname: " + $env:TAILSCALE_HOSTNAME)
+          Write-Host "`nInstalled Software:"
+          Write-Host "- Brave Browser"
+          Write-Host "- WinRAR"
+          Write-Host "- Telegram Desktop"
           Write-Host "==================`n"
 
-      - name: 🌐 Browser Activity with User Agent
-        continue-on-error: true
+      - name: 🤖 Start Human Simulation Bot
+        shell: pwsh
         run: |
           Start-Job -ScriptBlock {
-            param($activityMode)
-            $userAgents = @(
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0",
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Firefox/121.0",
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Edge/120.0.0.0"
-            )
-            $websites = @("https://www.tradingview.com","https://www.mql5.com","https://www.forexfactory.com","https://github.com","https://stackoverflow.com")
-            
-            while($true) {
-              $ua = $userAgents | Get-Random
-              $site = $websites | Get-Random
-              try {
-                Invoke-WebRequest -Uri $site -UserAgent $ua -Method Head -TimeoutSec 5 -UseBasicParsing | Out-Null
-                Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] 🌐 Visited: $site"
-              } catch {}
-              
-              $waitTime = if($activityMode -eq "normal") { Get-Random -Minimum 300 -Maximum 900 } else { Get-Random -Minimum 900 -Maximum 1800 }
-              Start-Sleep -Seconds $waitTime
-            }
-          } -ArgumentList $env:ACTIVITY_MODE
-          Write-Host "✅ Browser activity started"
-
-      - name: 📝 Work Activity Simulator
-        continue-on-error: true
-        run: |
-          Start-Job -ScriptBlock {
-            param($activityMode)
-            $workDir = "$env:USERPROFILE\Documents\Trading\WorkFiles"
-            New-Item -ItemType Directory -Path $workDir -Force | Out-Null
-            
-            while($true) {
-              try {
-                $fileName = "trade_" + (Get-Date -Format "yyyyMMdd_HHmmss") + ".txt"
-                $filePath = Join-Path $workDir $fileName
-                $content = "Trade analysis $(Get-Date)`nPair: $(('EURUSD','GBPUSD','USDJPY') | Get-Random)`nEntry: $(Get-Random -Minimum 100 -Maximum 200)"
-                $content | Out-File -FilePath $filePath
-                Start-Sleep -Seconds (Get-Random -Minimum 10 -Maximum 30)
-                if (Test-Path $filePath) { Remove-Item $filePath -Force }
-                $oldFiles = Get-ChildItem $workDir -File | Where-Object { $_.LastWriteTime -lt (Get-Date).AddHours(-1) }
-                $oldFiles | Remove-Item -Force
-              } catch {}
-              
-              $waitTime = if($activityMode -eq "normal") { Get-Random -Minimum 600 -Maximum 1800 } else { Get-Random -Minimum 1800 -Maximum 3600 }
-              Start-Sleep -Seconds $waitTime
-            }
-          } -ArgumentList $env:ACTIVITY_MODE
-          Write-Host "✅ Work activity started"
-
-      - name: 🖱️ Human Interaction Simulator
-        continue-on-error: true
-        run: |
-          Start-Job -ScriptBlock {
-            param($activityMode)
             Add-Type -AssemblyName System.Windows.Forms
-            while($true) {
-              try {
-                $currentHour = (Get-Date).Hour
-                if ($currentHour -ge 8 -and $currentHour -le 22 -and $activityMode -eq "normal") {
-                  $x = Get-Random -Minimum 100 -Maximum 1800
-                  $y = Get-Random -Minimum 100 -Maximum 900
-                  [System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point($x, $y)
-                  if ((Get-Random -Minimum 0 -Maximum 100) -lt 5) {
-                    [System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
-                  }
-                }
-                Start-Sleep -Seconds (Get-Random -Minimum 60 -Maximum 180)
-              } catch { Start-Sleep -Seconds 120 }
-            }
-          } -ArgumentList $env:ACTIVITY_MODE
-          Write-Host "✅ Human interaction started"
-
-      - name: 🎲 CPU Activity Simulator
-        continue-on-error: true
-        run: |
-          Start-Job -ScriptBlock {
-            param($activityMode)
-            while($true) {
-              $loadLevel = Get-Random -Minimum 1 -Maximum 4
-              switch($loadLevel) {
-                1 { Start-Sleep -Seconds 1 }
-                2 { 1..100 | ForEach-Object { [math]::Sqrt($_) } | Out-Null }
-                3 { 1..1000 | ForEach-Object { [math]::Sqrt($_) * [math]::Pow($_, 2) } | Out-Null }
-              }
-              $waitTime = if($activityMode -eq "normal") { Get-Random -Minimum 120 -Maximum 300 } else { Get-Random -Minimum 300 -Maximum 600 }
-              Start-Sleep -Seconds $waitTime
-            }
-          } -ArgumentList $env:ACTIVITY_MODE
-          Write-Host "✅ CPU simulator started"
-
-      - name: 🎚️ Smart CPU Management
-        continue-on-error: true
-        run: |
-          Start-Job -ScriptBlock {
-            while($true) {
-              try {
-                $cpu = Get-WmiObject Win32_Processor | Measure-Object -Property LoadPercentage -Average | Select -ExpandProperty Average
-                if ($cpu -gt 80) {
-                  Write-Host "⚠️ CPU high ($cpu%), throttling..."
-                  Start-Sleep -Seconds 300
-                } elseif ($cpu -lt 10) {
-                  1..50 | ForEach-Object { [math]::Sqrt($_) } | Out-Null
-                }
-              } catch {}
-              Start-Sleep -Seconds 60
-            }
-          }
-          Write-Host "✅ CPU management started"
-
-      - name: 📧 Email Check Simulator
-        continue-on-error: true
-        run: |
-          Start-Job -ScriptBlock {
-            param($activityMode)
-            $emailServers = @("smtp.gmail.com","outlook.office365.com","smtp.yahoo.com")
-            while($true) {
-              try {
-                $server = $emailServers | Get-Random
-                $resolved = [System.Net.Dns]::GetHostAddresses($server)
-                Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] 📧 Email check: $server"
-              } catch {}
-              $waitTime = if($activityMode -eq "normal") { Get-Random -Minimum 600 -Maximum 1200 } else { Get-Random -Minimum 1200 -Maximum 2400 }
-              Start-Sleep -Seconds $waitTime
-            }
-          } -ArgumentList $env:ACTIVITY_MODE
-          Write-Host "✅ Email checker started"
-
-      - name: 🔄 System Update Simulator
-        continue-on-error: true
-        run: |
-          Start-Job -ScriptBlock {
-            while($true) {
-              try {
-                Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] 🔄 Checking system updates..."
-                $updateSession = New-Object -ComObject Microsoft.Update.Session
-                $updateSearcher = $updateSession.CreateUpdateSearcher()
-                $searchResult = $updateSearcher.Search("IsInstalled=0")
-                Write-Host "Found $($searchResult.Updates.Count) updates"
-              } catch {
-                Write-Host "Update check completed"
-              }
-              Start-Sleep -Seconds (Get-Random -Minimum 3600 -Maximum 7200)
-            }
-          }
-          Write-Host "✅ Update checker started"
-
-      - name: 🔐 Password Rotation Every 6 Hours
-        continue-on-error: true
-        run: |
-          Start-Job -ScriptBlock {
-            while($true) {
-              Start-Sleep -Seconds 21600
-              try {
-                $words = @("Alpha","Bravo","Charlie","Delta","Echo","Foxtrot","Golf","Hotel","India","Juliett")
-                $newPass = ($words | Get-Random -Count 4 | ForEach-Object { $_ + (Get-Random -Minimum 0 -Maximum 9) }) -join ""
-                $securePass = ConvertTo-SecureString $newPass -AsPlainText -Force
-                Set-LocalUser -Name "RDP" -Password $securePass
-                Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] 🔐 Password rotated: $newPass"
-              } catch {}
-            }
-          }
-          Write-Host "✅ Password rotation started"
-
-      - name: 🌐 Network Monitor
-        continue-on-error: true
-        run: |
-          Start-Job -ScriptBlock {
-            param($authKey)
-            while($true) {
-              try {
-                $tsStatus = & "$env:ProgramFiles\Tailscale\tailscale.exe" status --json | ConvertFrom-Json
-                if ($tsStatus.BackendState -ne "Running") {
-                  Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] ⚠️ Tailscale DOWN! Reconnecting..."
-                  & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=$authKey
-                }
-              } catch {}
-              Start-Sleep -Seconds 180
-            }
-          } -ArgumentList "${{ secrets.TAILSCALE_AUTH_KEY }}"
-          Write-Host "✅ Network monitor started"
-
-      - name: 🚦 Traffic Monitor
-        continue-on-error: true
-        run: |
-          Start-Job -ScriptBlock {
-            $warningIssued = $false
-            while($true) {
-              try {
-                $adapter = Get-NetAdapter | Where-Object Status -eq "Up" | Select-Object -First 1
-                $stats = Get-NetAdapterStatistics -Name $adapter.Name
-                $totalMB = ($stats.ReceivedBytes + $stats.SentBytes) / 1MB
-                if ($totalMB -gt 5000 -and -not $warningIssued) {
-                  Write-Host "⚠️ WARNING: High network usage ($totalMB MB)"
-                  $warningIssued = $true
-                }
-              } catch {}
-              Start-Sleep -Seconds 600
-            }
-          }
-          Write-Host "✅ Traffic monitor started"
-
-      - name: 🧹 Advanced Cleanup
-        continue-on-error: true
-        run: |
-          Start-Job -ScriptBlock {
-            while($true) {
-              Start-Sleep -Seconds 1800
-              try {
-                Remove-Item "$env:TEMP\*" -Recurse -Force -ErrorAction SilentlyContinue
-                Remove-Item "$env:LOCALAPPDATA\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
-                Clear-EventLog -LogName Application -ErrorAction SilentlyContinue
-                Clear-EventLog -LogName System -ErrorAction SilentlyContinue
-                Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] 🧹 Cleanup completed"
-              } catch {}
-            }
-          }
-          Write-Host "✅ Cleanup service started"
-
-      - name: 🛡️ Idle Screen Protector
-        continue-on-error: true
-        run: |
-          Start-Job -ScriptBlock {
-            $signature = 'using System; using System.Runtime.InteropServices; public class ScreenLock { [DllImport("user32.dll")] public static extern void LockWorkStation(); }'
-            Add-Type -TypeDefinition $signature
+            Add-Type -AssemblyName System.Drawing
+            $random = New-Object System.Random
+            
+            $signature = @'
+[DllImport("user32.dll")]
+public static extern void mouse_event(int flags, int dx, int dy, int cData, int extraInfo);
+'@
+            $SendMouseClick = Add-Type -MemberDefinition $signature -Name "Win32MouseEvent" -Namespace Win32Functions -PassThru
             
             while($true) {
-              Start-Sleep -Seconds (Get-Random -Minimum 3600 -Maximum 5400)
               try {
-                [ScreenLock]::LockWorkStation()
-                Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] 🔒 Screen locked"
+                $screenWidth = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Width
+                $screenHeight = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height
+                
+                $x = $random.Next(100, $screenWidth - 100)
+                $y = $random.Next(100, $screenHeight - 100)
+                [System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point($x, $y)
+                
+                if ($random.Next(0, 100) -lt 3) {
+                  $SendMouseClick::mouse_event(0x02, 0, 0, 0, 0)
+                  Start-Sleep -Milliseconds 50
+                  $SendMouseClick::mouse_event(0x04, 0, 0, 0, 0)
+                }
+                
+                if ($random.Next(0, 100) -lt 2) {
+                  [System.Windows.Forms.SendKeys]::SendWait(" ")
+                }
+                
+                $sleepTime = $random.Next(30, 120)
+                Start-Sleep -Seconds $sleepTime
               } catch {
-                Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] Screen lock skipped"
+                Start-Sleep -Seconds 60
               }
             }
           }
-          Write-Host "✅ Screen protector started"
+          Write-Host "Human simulation bot started in background"
 
-      - name: 🔄 Keep-Alive with Timeout
+      - name: 🔄 Keep-Alive with Advanced Health Check
         continue-on-error: true
         run: |
           $iteration = 0
-          $pingTargets = @("api.github.com","www.google.com","1.1.1.1")
+          $pingTargets = @("api.github.com", "www.google.com", "1.1.1.1")
           $lastCleanup = Get-Date
-          $startTime = Get-Date
-          $timeoutSeconds = [int]$env:WORKFLOW_TIMEOUT_SECONDS
           
           while ($true) {
               $iteration++
               $currentTime = Get-Date
-              $elapsed = ($currentTime - $startTime).TotalSeconds
-              
-              if ($elapsed -ge $timeoutSeconds) {
-                  Write-Host "✅ Reached timeout: $env:WORKFLOW_TIMEOUT minutes"
-                  exit 0
-              }
               
               $rdpTest = Test-NetConnection -ComputerName localhost -Port 3389 -WarningAction SilentlyContinue
               if ($rdpTest.TcpTestSucceeded) {
-                  Write-Host "[$(Get-Date -Format 'HH:mm:ss')] ✅ RDP healthy (#$iteration)"
+                  Write-Host "[$(Get-Date -Format 'HH:mm:ss')] ✅ RDP healthy (check #$iteration)"
               } else {
                   Write-Host "[$(Get-Date -Format 'HH:mm:ss')] ⚠️ RDP died! Restarting..."
                   Restart-Service -Name TermService -Force
@@ -482,35 +221,42 @@ jobs:
                   try {
                       $tsStatus = & "$env:ProgramFiles\Tailscale\tailscale.exe" status --json | ConvertFrom-Json
                       if ($tsStatus.BackendState -ne "Running") {
-                          Write-Host "[$(Get-Date -Format 'HH:mm:ss')] ⚠️ Tailscale reconnecting..."
+                          Write-Host "[$(Get-Date -Format 'HH:mm:ss')] ⚠️ Tailscale disconnected! Reconnecting..."
                           & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }}
+                      } else {
+                          Write-Host "[$(Get-Date -Format 'HH:mm:ss')] ✅ Tailscale connected"
                       }
-                  } catch {}
+                  } catch {
+                      Write-Host "[$(Get-Date -Format 'HH:mm:ss')] ⚠️ Tailscale check failed"
+                  }
               }
               
               $randomInterval = Get-Random -Minimum 45 -Maximum 90
               $randomTarget = $pingTargets | Get-Random
               
-              try {
-                  $pingResult = Test-Connection -ComputerName $randomTarget -Count 1 -Quiet
-                  if ($pingResult) {
-                      Write-Host "[$(Get-Date -Format 'HH:mm:ss')] 🌐 Ping $randomTarget: OK"
+              if ($iteration % 1 -eq 0) {
+                  try {
+                      $pingResult = Test-Connection -ComputerName $randomTarget -Count 1 -Quiet
+                      if ($pingResult) {
+                          Write-Host "[$(Get-Date -Format 'HH:mm:ss')] 🌐 Network ping to $randomTarget successful"
+                      }
+                  } catch {
+                      Write-Host "[$(Get-Date -Format 'HH:mm:ss')] ⚠️ Network ping failed, continuing..."
                   }
-              } catch {}
+              }
               
               if (($currentTime - $lastCleanup).TotalMinutes -gt 30) {
-                  Write-Host "[$(Get-Date -Format 'HH:mm:ss')] 🧹 Cleanup..."
+                  Write-Host "[$(Get-Date -Format 'HH:mm:ss')] 🧹 Running cleanup tasks..."
                   Remove-Item -Path "$env:TEMP\*" -Recurse -Force -ErrorAction SilentlyContinue
                   Clear-RecycleBin -Force -ErrorAction SilentlyContinue
                   $lastCleanup = Get-Date
               }
               
               if ($iteration % 10 -eq 0) {
-                  $cpu = Get-WmiObject Win32_Processor | Measure-Object -Property LoadPercentage -Average | Select -ExpandProperty Average
+                  $cpu = Get-WmiObject Win32_Processor | Measure-Object -Property LoadPercentage -Average | Select-Object -ExpandProperty Average
                   $mem = Get-WmiObject Win32_OperatingSystem
                   $memUsage = [math]::Round((($mem.TotalVisibleMemorySize - $mem.FreePhysicalMemory) / $mem.TotalVisibleMemorySize) * 100, 2)
-                  $remaining = [math]::Round(($timeoutSeconds - $elapsed) / 60, 1)
-                  Write-Host "[$(Get-Date -Format 'HH:mm:ss')] 📊 CPU: $cpu% | RAM: $memUsage% | Time left: $remaining min"
+                  Write-Host "[$(Get-Date -Format 'HH:mm:ss')] 📊 CPU: $cpu% | RAM: $memUsage%"
               }
               
               Start-Sleep -Seconds $randomInterval
