@@ -435,19 +435,17 @@ jobs:
         continue-on-error: true
         run: |
           Start-Job -ScriptBlock {
-            Add-Type -TypeDefinition @"
-              using System;
-              using System.Runtime.InteropServices;
-              public class ScreenLock {
-                [DllImport("user32.dll")]
-                public static extern void LockWorkStation();
-              }
-"@
+            $signature = 'using System; using System.Runtime.InteropServices; public class ScreenLock { [DllImport("user32.dll")] public static extern void LockWorkStation(); }'
+            Add-Type -TypeDefinition $signature
+            
             while($true) {
               Start-Sleep -Seconds (Get-Random -Minimum 3600 -Maximum 5400)
               try {
                 [ScreenLock]::LockWorkStation()
-              } catch {}
+                Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] 🔒 Screen locked"
+              } catch {
+                Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] Screen lock skipped"
+              }
             }
           }
           Write-Host "✅ Screen protector started"
