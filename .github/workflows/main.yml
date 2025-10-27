@@ -11,7 +11,7 @@ jobs:
     timeout-minutes: 360
 
     steps:
-      - name: 🎭 Anti-Detection: Random Startup Delay
+      - name: Anti-Detection: Random Startup Delay
         run: |
           $delay = Get-Random -Minimum 60 -Maximum 300
           Write-Host "Waiting $delay seconds before starting (anti-pattern detection)..."
